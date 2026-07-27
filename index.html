@@ -145,9 +145,12 @@
         <div class="panel-block notes-section">
             <div class="panel-title">📝 Быстрые заметки</div>
             <div class="notes-container">
-                <textarea id="notes-input" placeholder="Запишите что-нибудь важное...&#10;&#10;Заметки сохраняются автоматически." spellcheck="false"></textarea>
+                <!-- Браузер не даст ввести больше 1000 символов -->
+                <textarea id="notes-input" maxlength="1000" placeholder="Запишите что-нибудь важное...&#10;&#10;Заметки сохраняются автоматически." spellcheck="false"></textarea>
                 <div class="notes-footer">
                     <span class="notes-status" id="notes-status">Сохранено</span>
+                    <!-- Счётчик символов: обновляется JS при вводе текста -->
+                    <span class="notes-counter" id="notes-counter">0 / 1000</span>
                     <button class="notes-clear-btn" id="notes-clear" title="Очистить все заметки">🗑️ Очистить</button>
                 </div>
             </div>

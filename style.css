@@ -899,6 +899,7 @@ body.editing .card.drag-over {
     align-items: center;
     justify-content: space-between;
     padding: 0 4px;
+    gap: 8px; /* Отступы между статусом, счётчиком и кнопкой */
 }
 
 .notes-status {
@@ -909,6 +910,28 @@ body.editing .card.drag-over {
 
 .notes-status.saving {
     color: var(--accent);
+}
+
+/* Счётчик символов в заметках (X / 1000) */
+.notes-counter {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-family: 'Inter', 'SF Mono', 'Consolas', monospace;
+    font-variant-numeric: tabular-nums; /* Цифры одинаковой ширины */
+    transition: color 0.2s;
+    margin-left: auto; /* Прижимает кнопку "Очистить" вправо */
+}
+
+/* Оранжевый — больше 90% лимита (900+ символов) */
+.notes-counter.warning {
+    color: #f90;
+    font-weight: 600;
+}
+
+/* Красный — лимит достигнут (1000 символов) */
+.notes-counter.danger {
+    color: var(--danger);
+    font-weight: 600;
 }
 
 .notes-clear-btn {
@@ -1004,7 +1027,7 @@ body.editing .card.drag-over {
     font-size: 0.95rem;  /* было 0.9rem — стало чуть больше */
     cursor: default;
     transition: background-color 0.2s;
-    font-variant-numeric: tabular-nums;  /* ← ДОБАВИТЬ ЭТУ СТРОКУ */
+    font-variant-numeric: tabular-nums;  /* Цифры одинаковой ширины */
 }
 
 .calendar-day:hover {

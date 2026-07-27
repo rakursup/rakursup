@@ -5,6 +5,28 @@
 const notesInput = document.getElementById('notes-input');
 const notesStatus = document.getElementById('notes-status');
 const notesClearBtn = document.getElementById('notes-clear');
+const notesCounter = document.getElementById('notes-counter'); // Счётчик символов
+
+// Максимальное количество символов в заметках
+const MAX_NOTES_LENGTH = 1000;
+
+// Обновляет счётчик и меняет цвет при приближении к лимиту
+function updateCounter() {
+    const current = notesInput.value.length;
+    notesCounter.textContent = `${current} / ${MAX_NOTES_LENGTH}`;
+    
+    // Сбрасываем старые цвета
+    notesCounter.classList.remove('warning', 'danger');
+    
+    // Красный — лимит достигнут
+    if (current >= MAX_NOTES_LENGTH) {
+        notesCounter.classList.add('danger');
+    }
+    // Оранжевый — больше 90% лимита
+    else if (current >= MAX_NOTES_LENGTH * 0.9) {
+        notesCounter.classList.add('warning');
+    }
+}
 
 // Сохраняет заметки с задержкой 500мс (чтобы не писать при каждом нажатии клавиши)
 const debouncedSaveNotes = debounce(() => {
@@ -17,10 +39,12 @@ const debouncedSaveNotes = debounce(() => {
 function loadNotes() {
     const saved = localStorage.getItem(NOTES_KEY);
     if (saved !== null) notesInput.value = saved;
+    updateCounter(); // Показываем актуальный счётчик
 }
 
 // При вводе текста — показываем "Сохранение..." и запускаем отложенное сохранение
 notesInput.addEventListener('input', () => {
+    updateCounter(); // Сразу обновляем счётчик
     notesStatus.textContent = 'Сохранение...';
     notesStatus.classList.add('saving');
     debouncedSaveNotes();
@@ -34,6 +58,7 @@ notesClearBtn.addEventListener('click', () => {
         localStorage.removeItem(NOTES_KEY);
         notesStatus.textContent = 'Очищено';
         notesStatus.classList.remove('saving');
+        updateCounter(); // Обнуляем счётчик
         setTimeout(() => { notesStatus.textContent = 'Сохранено'; }, 1500);
     }
 });
