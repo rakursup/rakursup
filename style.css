@@ -869,9 +869,8 @@ body.editing .card.drag-over {
 
 #notes-input {
     width: 100%;
-    min-height: 120px;
-    max-height: 300px;
-    resize: vertical;
+    height: 240px;
+    resize: none;
     background: var(--weather-bg);
     border: 1px solid var(--border);
     border-radius: 8px;
@@ -882,6 +881,7 @@ body.editing .card.drag-over {
     line-height: 1.6;
     outline: none;
     transition: border-color 0.2s, box-shadow 0.2s;
+    overflow-y: auto;
 }
 
 #notes-input:focus {
