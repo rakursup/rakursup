@@ -1,0 +1,67 @@
+// ============================================================
+// ПОГОДА И ЧАСЫ — показывает время и погоду в 3 городах
+// ============================================================
+
+// Интервал обновления погоды (30 минут в миллисекундах)
+const WEATHER_UPDATE_INTERVAL = 30 * 60 * 1000;
+
+// Список городов для часов (с часовыми поясами)
+const cities = [
+    { id: 'clock-arkh', zone: 'Europe/Moscow' },
+    { id: 'clock-pattaya', zone: 'Asia/Bangkok' },
+    { id: 'clock-nhatrang', zone: 'Asia/Ho_Chi_Minh' }
+];
+
+// Обновляет время в часах (вызывается каждую секунду)
+function updateClocks() {
+    const now = new Date();
+    cities.forEach(c => {
+        const el = document.getElementById(c.id);
+        if (el) el.textContent = new Intl.DateTimeFormat('ru-RU', {
+            timeZone: c.zone,
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        }).format(now);
+    });
+}
+
+updateClocks();
+setInterval(updateClocks, 1000);
+
+// ===== ПОГОДА =====
+// Города с координатами для API погоды
+const wCities = [
+    { id: 'arkh', lat: 64.5401, lon: 40.5433 },
+    { id: 'pattaya', lat: 12.9236, lon: 100.8825 },
+    { id: 'nhatrang', lat: 12.2388, lon: 109.1967 }
+];
+
+// Словарь кодов погоды (API возвращает число, мы показываем иконку и текст)
+const wCodes = {
+    0: { i: '☀️', d: 'Ясно' }, 1: { i: '🌤️', d: 'Малооблачно' }, 2: { i: '⛅', d: 'Облачно' }, 3: { i: '☁️', d: 'Пасмурно' },
+    45: { i: '🌫️', d: 'Туман' }, 48: { i: '🌫️', d: 'Изморозь' }, 51: { i: '🌦️', d: 'Лёгкая морось' }, 53: { i: '🌦️', d: 'Морось' },
+    55: { i: '🌧️', d: 'Сильная морось' }, 56: { i: '🌧️', d: 'Ледяная морось' }, 57: { i: '🌧️', d: 'Сильная ледяная морось' },
+    61: { i: '🌦️', d: 'Небольшой дождь' }, 63: { i: '🌧️', d: 'Дождь' }, 65: { i: '🌧️', d: 'Сильный дождь' },
+    66: { i: '🌨️', d: 'Ледяной дождь' }, 67: { i: '🌨️', d: 'Сильный ледяной дождь' }, 71: { i: '🌨️', d: 'Небольшой снег' },
+    73: { i: '❄️', d: 'Снег' }, 75: { i: '❄️', d: 'Сильный снег' }, 77: { i: '🌨️', d: 'Снежные зёрна' },
+    80: { i: '🌦️', d: 'Ливень' }, 81: { i: '🌧️', d: 'Сильный ливень' }, 82: { i: '⛈️', d: 'Очень сильный ливень' },
+    85: { i: '🌨️', d: 'Снегопад' }, 86: { i: '❄️', d: 'Сильный снегопад' }, 95: { i: '⛈️', d: 'Гроза' },
+    96: { i: '⛈️', d: 'Гроза с градом' }, 99: { i: '⛈️', d: 'Сильная гроза с градом' }
+};
+
+// Запрашивает погоду с API open-meteo.com (бесплатно, без ключа)
+async function fetchWeather(c) {
+    try {
+        const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${c.lat}&longitude=${c.lon}&current=temperature_2m,weather_code,wind_speed_10m,relative_humidity_2m&timezone=auto`);
+        const d = await r.json();
+        const t = Math.round(d.current.temperature_2m), w = Math.round(d.current.wind_speed_10m), h = d.current.relative_humidity_2m;
+        const info = wCodes[d.current.weather_code] || { i: '🌡️', d: 'Нет данных' };
+        document.getElementById(`weather-${c.id}`).innerHTML = `<div class="weather-main"><span class="weather-icon">${info.i}</span><span class="weather-temp">${t}°C</span></div><div class="weather-desc">${info.d}</div><div class="weather-details"><span>💨 ${w}</span><span>💧 ${h}%</span></div>`;
+    } catch (e) {
+        document.getElementById(`weather-${c.id}`).innerHTML = '<span class="weather-loading">Нет данных</span>';
+    }
+}
+
+wCities.forEach(fetchWeather);
+setInterval(() => wCities.forEach(fetchWeather), WEATHER_UPDATE_INTERVAL);
