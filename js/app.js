@@ -74,10 +74,18 @@ document.getElementById('bookmarks-grid').addEventListener('click', (e) => {
         bookmarks[c].links.splice(l, 1);
         saveBookmarks();
     }
-    else if (action === 'add-link') {
-        const ci = parseInt(btn.dataset.cat);
-        openModal('Добавить ссылку', 'Название', true, (n, u) => { bookmarks[ci].links.push({ name: n, url: u }); saveBookmarks(); });
+   else if (action === 'add-link') {
+    const ci = parseInt(btn.dataset.cat);
+    // Проверяем лимит: максимум 7 ссылок в категории
+    if (bookmarks[ci].links.length >= 7) {
+        alert('⚠️ В категории «' + bookmarks[ci].title + '» уже 7 ссылок.\nУдалите одну, чтобы добавить новую.');
+        return;
     }
+    openModal('Добавить ссылку', 'Название', true, (n, u) => {
+        bookmarks[ci].links.push({ name: n, url: u });
+        saveBookmarks();
+    });
+}
 });
 
 // ===== ПЕРЕТАСКИВАНИЕ КАРТОЧЕК (Drag & Drop) =====
