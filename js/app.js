@@ -173,6 +173,7 @@ function setAccent(color, save = true) {
     if (color === '#f90') hoverColor = '#ffb347';
     else if (color === '#206a9b') hoverColor = '#2a85c2';
     else if (color === '#E72C98') hoverColor = '#ff66cc';
+    else if (color === '#0ff0d9') hoverColor = '#00D1BC';
     document.documentElement.style.setProperty('--accent-hover', hoverColor);
     if (save) safeSetItem(ACCENT_KEY, color);
     document.querySelectorAll('.color-btn').forEach(btn => { btn.classList.toggle('active', btn.dataset.color === color); });

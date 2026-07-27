@@ -133,6 +133,10 @@
     background-color: #E72C98;
 }
 
+.btn-turquoise { 
+    background-color: #00D1BC; 
+}
+
 * {
     box-sizing: border-box;
     margin: 0;
