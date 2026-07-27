@@ -21,6 +21,7 @@ const DEFAULT_BOOKMARKS = [
     { title: '🛠️ Инструменты', links: [{ name: 'Яндекс Переводчик', url: 'https://translate.yandex.ru/' }, { name: 'Google Translate', url: 'https://translate.google.com/' }, { name: 'Gismeteo', url: 'https://gismeteo.ru/' }, { name: 'Say7', url: 'https://www.say7.info/' }] },
     { title: '💻 Разработка', links: [{ name: 'GitHub', url: 'https://github.com/' }, { name: 'Stack Overflow', url: 'https://stackoverflow.com/' }, { name: 'ChatGPT', url: 'https://chat.openai.com/' }, { name: 'MDN Web Docs', url: 'https://developer.mozilla.org/' }, { name: 'Docker Hub', url: 'https://hub.docker.com/' }, { name: 'CodePen', url: 'https://codepen.io/' }] },
     { title: '☁️ Облака', links: [{ name: 'Яндекс Диск', url: 'https://disk.yandex.ru/' }, { name: 'Google Drive', url: 'https://drive.google.com/' }, { name: 'Облако Mail.ru', url: 'https://cloud.mail.ru/' }, { name: 'Dropbox', url: 'https://www.dropbox.com/' }, { name: 'MEGA', url: 'https://mega.nz/' }, { name: 'OneDrive', url: 'https://onedrive.live.com/' }] }
+    { title: '🤖 ИИ-чаты', links: [{ name: 'Qwen AI', url: 'https://chat.qwen.ai/' },{ name: 'ChatGPT', url: 'https://chat.openai.com/' },{ name: 'Яндекс Алиса', url: 'https://alice.yandex.ru/' },{ name: 'Grok AI', url: 'https://grok.com/' },{ name: 'Gemini', url: 'https://gemini.google.com/' },{ name: 'Claude AI', url: 'https://claude.ai/' }]}
 ];
 
 // ===== ЗАКЛАДКИ =====
