@@ -168,20 +168,6 @@
 
 ---
 
-## 🌐 Деплой (GitHub Pages)
-
-Сайт опубликован на [rakursup.github.io](https://rakursup.github.io/).
-
-- Репозиторий: `rakursup/rakursup.github.io` (user site — чистый адрес без хвоста)
-- Деплой автоматический: каждый `git push` в `main` пересобирает сайт
-- Включено: Settings → Pages → branch `main` / root
-
-```bash
-git add .
-git commit -m "описание изменений"
-git push
-```
-
 
 <div align="center">
 
