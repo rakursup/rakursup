@@ -8,9 +8,10 @@ const RADIO_STATIONS = [
     { name: 'Record Chill', url: 'https://radiorecord.hostingradio.ru/chil96.aacp' },
     { name: 'Monte Carlo', url: 'https://montecarlo.hostingradio.ru/montecarlo128.mp3' },
     { name: 'Jazz FM', url: 'http://nashe1.hostingradio.ru/jazz-128.mp3' },
-    { name: 'Chillout Radio', url: 'https://stream.zeno.fm/f3wvbbqmdg8uv' }
+    { name: 'SomaFM Groove Salad', url: 'https://ice1.somafm.com/groovesalad-128-mp3' },
+    { name: 'SomaFM Drone Zone', url: 'https://ice1.somafm.com/dronezone-128-mp3' },
+    { name: 'SomaFM Secret Agent', url: 'https://ice1.somafm.com/secretagent-128-mp3' }
 ];
-
 let currentStation = 0, isPlaying = false, errorRetryTimer = null, consecutiveErrors = 0;
 
 // DOM-элементы плеера
