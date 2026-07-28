@@ -1,5 +1,5 @@
 // ============================================================
-// КУРСЫ ВАЛЮТ — показывает курсы THB, USD, EUR к RUB
+// КУРСЫ ВАЛЮТ — показывает курсы THB, CNY, USD, EUR к RUB
 // ============================================================
 
 const CURRENCY_UPDATE_INTERVAL = 60 * 60 * 1000; // Обновление раз в час
@@ -7,6 +7,7 @@ const CURRENCY_UPDATE_INTERVAL = 60 * 60 * 1000; // Обновление раз 
 // Какие валюты показывать
 const CURRENCY_PAIRS = [
     { from: 'THB', to: 'RUB', flag: '🇹🇭', label: 'THB → RUB' },
+    { from: 'CNY', to: 'RUB', flag: '🇨🇳', label: 'CNY → RUB' },
     { from: 'USD', to: 'RUB', flag: '🇺🇸', label: 'USD → RUB' },
     { from: 'EUR', to: 'RUB', flag: '🇪🇺', label: 'EUR → RUB' }
 ];
