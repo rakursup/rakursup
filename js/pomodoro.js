@@ -1,12 +1,12 @@
 // ============================================================
 // ПОМОДОРО ТАЙМЕР — техника продуктивности (25/5/15 минут)
+// Отсчёт от таймстампа: не дрейфует в фоновой вкладке
 // ============================================================
-
-// Настройки таймера (в минутах)
 const POMO_WORK_MIN = 25;              // Время работы
 const POMO_SHORT_BREAK_MIN = 5;        // Короткий перерыв
 const POMO_LONG_BREAK_MIN = 15;        // Длинный перерыв
 const POMO_SESSIONS_BEFORE_LONG = 4;   // После 4 рабочих сессий — длинный перерыв
+const POMO_SAVE_INTERVAL = 15000;      // Пишем в localStorage не чаще раза в 15 секунд
 
 // DOM-элементы
 const pomoModeEl = document.getElementById('pomo-mode');
@@ -15,174 +15,178 @@ const pomoBarEl = document.getElementById('pomo-bar');
 const pomoStartBtn = document.getElementById('pomo-start');
 const pomoResetBtn = document.getElementById('pomo-reset');
 const pomoDots = [
-    document.getElementById('dot-1'),
-    document.getElementById('dot-2'),
-    document.getElementById('dot-3'),
-    document.getElementById('dot-4')
+  document.getElementById('dot-1'),
+  document.getElementById('dot-2'),
+  document.getElementById('dot-3'),
+  document.getElementById('dot-4')
 ];
 
 // Текущее состояние таймера
 let pomoState = {
-    mode: 'work',
-    timeLeft: POMO_WORK_MIN * 60,
-    totalTime: POMO_WORK_MIN * 60,
-    running: false,
-    completedSessions: 0
+  mode: 'work',
+  timeLeft: POMO_WORK_MIN * 60,
+  totalTime: POMO_WORK_MIN * 60,
+  running: false,
+  completedSessions: 0,
+  endTime: 0 // момент окончания отсчёта (Date.now() + timeLeft * 1000)
 };
 let pomoInterval = null;
+let lastSavedAt = 0;
 
 // Загружает состояние из localStorage
 function loadPomoState() {
-    try {
-        const saved = JSON.parse(localStorage.getItem(POMO_KEY));
-        if (saved) {
-            pomoState.mode = saved.mode || 'work';
-            pomoState.timeLeft = saved.timeLeft ?? POMO_WORK_MIN * 60;
-            pomoState.totalTime = saved.totalTime ?? POMO_WORK_MIN * 60;
-            pomoState.completedSessions = saved.completedSessions ?? 0;
-            pomoState.running = false;
-        }
-    } catch (e) {}
+  try {
+    const saved = JSON.parse(localStorage.getItem(POMO_KEY));
+    if (saved) {
+      pomoState.mode = saved.mode || 'work';
+      pomoState.timeLeft = saved.timeLeft ?? POMO_WORK_MIN * 60;
+      pomoState.totalTime = saved.totalTime ?? POMO_WORK_MIN * 60;
+      pomoState.completedSessions = saved.completedSessions ?? 0;
+      pomoState.running = false;
+    }
+  } catch (e) {}
 }
 
-function savePomoState() {
-    safeSetItem(POMO_KEY, JSON.stringify({
-        mode: pomoState.mode,
-        timeLeft: pomoState.timeLeft,
-        totalTime: pomoState.totalTime,
-        completedSessions: pomoState.completedSessions
-    }));
+// Сохраняет состояние (с троттлингом, если не force)
+function savePomoState(force = false) {
+  const now = Date.now();
+  if (!force && now - lastSavedAt < POMO_SAVE_INTERVAL) return;
+  lastSavedAt = now;
+  safeSetItem(POMO_KEY, JSON.stringify({
+    mode: pomoState.mode,
+    timeLeft: pomoState.timeLeft,
+    totalTime: pomoState.totalTime,
+    completedSessions: pomoState.completedSessions
+  }));
 }
 
 // Форматирует секунды в вид "MM:SS"
 function formatPomoTime(seconds) {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
 // Обновляет все элементы таймера на экране
 function updatePomoDisplay() {
-    pomoTimeEl.textContent = formatPomoTime(pomoState.timeLeft);
-    const progress = pomoState.totalTime > 0 ? (pomoState.timeLeft / pomoState.totalTime) * 100 : 0;
-    pomoBarEl.style.width = `${progress}%`;
+  pomoTimeEl.textContent = formatPomoTime(pomoState.timeLeft);
+  const progress = pomoState.totalTime > 0 ? (pomoState.timeLeft / pomoState.totalTime) * 100 : 0;
+  pomoBarEl.style.width = `${progress}%`;
 
-    // Меняем режим (работа/перерыв)
-    if (pomoState.mode === 'work') {
-        pomoModeEl.textContent = 'Фокус';
-        pomoBarEl.classList.remove('break-mode');
-    } else if (pomoState.mode === 'shortBreak') {
-        pomoModeEl.textContent = 'Перерыв';
-        pomoBarEl.classList.add('break-mode');
-    } else {
-        pomoModeEl.textContent = 'Длинный перерыв';
-        pomoBarEl.classList.add('break-mode');
-    }
+  if (pomoState.mode === 'work') {
+    pomoModeEl.textContent = 'Фокус';
+    pomoBarEl.classList.remove('break-mode');
+  } else if (pomoState.mode === 'shortBreak') {
+    pomoModeEl.textContent = 'Перерыв';
+    pomoBarEl.classList.add('break-mode');
+  } else {
+    pomoModeEl.textContent = 'Длинный перерыв';
+    pomoBarEl.classList.add('break-mode');
+  }
 
-    // Меняем текст кнопки
-    pomoStartBtn.textContent = pomoState.running ? '⏸ Пауза' : '▶ Старт';
-    pomoStartBtn.classList.toggle('running', pomoState.running);
+  pomoStartBtn.textContent = pomoState.running ? '⏸ Пауза' : '▶ Старт';
+  pomoStartBtn.classList.toggle('running', pomoState.running);
 
-    // Обновляем точки прогресса сессий
-    pomoDots.forEach((dot, i) => {
-        dot.classList.remove('completed', 'active');
-        if (i < pomoState.completedSessions) dot.classList.add('completed');
-        if (i === pomoState.completedSessions && pomoState.mode === 'work') dot.classList.add('active');
-    });
+  pomoDots.forEach((dot, i) => {
+    dot.classList.remove('completed', 'active');
+    if (i < pomoState.completedSessions) dot.classList.add('completed');
+    if (i === pomoState.completedSessions && pomoState.mode === 'work') dot.classList.add('active');
+  });
 
-    // Меняем заголовок вкладки (видно, когда вкладка неактивна)
-    if (pomoState.running) {
-        document.title = `${formatPomoTime(pomoState.timeLeft)} — ${pomoState.mode === 'work' ? 'Фокус' : 'Перерыв'}`;
-    } else {
-        document.title = 'Дашборд | Стартовая';
-    }
+  document.title = pomoState.running
+    ? `${formatPomoTime(pomoState.timeLeft)} — ${pomoState.mode === 'work' ? 'Фокус' : 'Перерыв'}`
+    : 'Дашборд | Стартовая';
 }
 
-// Тикает каждую секунду
-function pomoTick() {
-    if (pomoState.timeLeft <= 0) {
-        clearInterval(pomoInterval);
-        pomoInterval = null;
-        pomoState.running = false;
+// Двойной звуковой сигнал через Web Audio API
+function playPomoBeep() {
+  try {
+    const actx = new (window.AudioContext || window.webkitAudioContext)();
+    const beep = (freq, delay) => {
+      const osc = actx.createOscillator();
+      const gain = actx.createGain();
+      osc.connect(gain);
+      gain.connect(actx.destination);
+      osc.frequency.value = freq;
+      gain.gain.value = 0.3;
+      osc.start(actx.currentTime + delay);
+      osc.stop(actx.currentTime + delay + 0.3);
+    };
+    beep(pomoState.mode === 'work' ? 880 : 660, 0);
+    beep(pomoState.mode === 'work' ? 1100 : 880, 0.35);
+  } catch (e) {}
+}
 
-        // Играем звуковой сигнал через Web Audio API
-        try {
-            const actx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = actx.createOscillator();
-            const gain = actx.createGain();
-            osc.connect(gain);
-            gain.connect(actx.destination);
-            osc.frequency.value = pomoState.mode === 'work' ? 880 : 660;
-            gain.gain.value = 0.3;
-            osc.start();
-            osc.stop(actx.currentTime + 0.3);
-            setTimeout(() => {
-                const o2 = actx.createOscillator();
-                const g2 = actx.createGain();
-                o2.connect(g2);
-                g2.connect(actx.destination);
-                o2.frequency.value = pomoState.mode === 'work' ? 1100 : 880;
-                g2.gain.value = 0.3;
-                o2.start();
-                o2.stop(actx.currentTime + 0.3);
-            }, 350);
-        } catch (e) {}
-
-        // Переходим в следующий режим
-        if (pomoState.mode === 'work') {
-            pomoState.completedSessions++;
-            if (pomoState.completedSessions >= POMO_SESSIONS_BEFORE_LONG) {
-                pomoState.mode = 'longBreak';
-                pomoState.timeLeft = POMO_LONG_BREAK_MIN * 60;
-                pomoState.totalTime = POMO_LONG_BREAK_MIN * 60;
-                pomoState.completedSessions = 0;
-            } else {
-                pomoState.mode = 'shortBreak';
-                pomoState.timeLeft = POMO_SHORT_BREAK_MIN * 60;
-                pomoState.totalTime = POMO_SHORT_BREAK_MIN * 60;
-            }
-        } else {
-            pomoState.mode = 'work';
-            pomoState.timeLeft = POMO_WORK_MIN * 60;
-            pomoState.totalTime = POMO_WORK_MIN * 60;
-        }
-        savePomoState();
-        updatePomoDisplay();
-        return;
+// Переключает режим после завершения фазы
+function switchPomoMode() {
+  if (pomoState.mode === 'work') {
+    pomoState.completedSessions++;
+    if (pomoState.completedSessions >= POMO_SESSIONS_BEFORE_LONG) {
+      pomoState.mode = 'longBreak';
+      pomoState.timeLeft = pomoState.totalTime = POMO_LONG_BREAK_MIN * 60;
+      pomoState.completedSessions = 0;
+    } else {
+      pomoState.mode = 'shortBreak';
+      pomoState.timeLeft = pomoState.totalTime = POMO_SHORT_BREAK_MIN * 60;
     }
-    pomoState.timeLeft--;
-    savePomoState();
+  } else {
+    pomoState.mode = 'work';
+    pomoState.timeLeft = pomoState.totalTime = POMO_WORK_MIN * 60;
+  }
+}
+
+// Тик: время считается от таймстампа, а не декрементом —
+// даже если браузер «заморозил» вкладку, значение будет точным
+function pomoTick() {
+  pomoState.timeLeft = Math.max(0, Math.ceil((pomoState.endTime - Date.now()) / 1000));
+  if (pomoState.timeLeft <= 0) {
+    clearInterval(pomoInterval);
+    pomoInterval = null;
+    pomoState.running = false;
+    playPomoBeep();
+    switchPomoMode();
+    savePomoState(true);
     updatePomoDisplay();
+    return;
+  }
+  savePomoState(); // сработает не чаще раза в 15 секунд
+  updatePomoDisplay();
 }
 
 // Старт/пауза таймера
 function togglePomo() {
-    if (pomoState.running) {
-        clearInterval(pomoInterval);
-        pomoInterval = null;
-        pomoState.running = false;
-    } else {
-        pomoState.running = true;
-        pomoInterval = setInterval(pomoTick, 1000);
-    }
-    savePomoState();
-    updatePomoDisplay();
+  if (pomoState.running) {
+    clearInterval(pomoInterval);
+    pomoInterval = null;
+    pomoState.timeLeft = Math.max(0, Math.ceil((pomoState.endTime - Date.now()) / 1000));
+    pomoState.running = false;
+  } else {
+    pomoState.running = true;
+    pomoState.endTime = Date.now() + pomoState.timeLeft * 1000;
+    pomoInterval = setInterval(pomoTick, 500);
+  }
+  savePomoState(true);
+  updatePomoDisplay();
 }
 
 // Сброс таймера в исходное состояние
 function resetPomo() {
-    clearInterval(pomoInterval);
-    pomoInterval = null;
-    pomoState.running = false;
-    pomoState.mode = 'work';
-    pomoState.timeLeft = POMO_WORK_MIN * 60;
-    pomoState.totalTime = POMO_WORK_MIN * 60;
-    pomoState.completedSessions = 0;
-    savePomoState();
-    updatePomoDisplay();
+  clearInterval(pomoInterval);
+  pomoInterval = null;
+  pomoState.running = false;
+  pomoState.mode = 'work';
+  pomoState.timeLeft = pomoState.totalTime = POMO_WORK_MIN * 60;
+  pomoState.completedSessions = 0;
+  savePomoState(true);
+  updatePomoDisplay();
 }
 
 pomoStartBtn.addEventListener('click', togglePomo);
 pomoResetBtn.addEventListener('click', resetPomo);
+
+// Сохраняем остаток при скрытии или закрытии вкладки
+document.addEventListener('visibilitychange', () => { if (document.hidden) savePomoState(true); });
+window.addEventListener('beforeunload', () => savePomoState(true));
+
 loadPomoState();
 updatePomoDisplay();

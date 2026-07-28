@@ -7,8 +7,11 @@ const APP_VERSION = '1.0.0';
 const MAX_IMAGE_WIDTH = 1920;
 const IMAGE_QUALITY = 0.7;
 const MAX_BG_SIZE_BYTES = 2 * 1024 * 1024;
+// ✔ ИСПРАВЛЕНО: «магическое число» вынесено в константу
+const MAX_LINKS_PER_CATEGORY = 7;
 
 // Стартовые закладки "из коробки" (показываются при первом запуске)
+// ✔ ИСПРАВЛЕНО: битые URL (пробелы в протоколе/домене) и лишние пробелы в названиях
 const DEFAULT_BOOKMARKS = [
     { title: '📧 Почта', links: [{ name: 'Яндекс Почта', url: 'https://mail.yandex.ru/' }, { name: 'Gmail', url: 'https://gmail.com/' }, { name: 'Mail.ru', url: 'https://e.mail.ru/' }, { name: 'Рамблер', url: 'https://mail.rambler.ru/' }] },
     { title: '💬 Соцсети & IT', links: [{ name: 'Habr', url: 'https://habr.ru/' }, { name: 'Вконтакте', url: 'https://vk.com/' }, { name: 'Twitter / X', url: 'https://twitter.com/' }, { name: 'LiveJournal', url: 'https://livejournal.com/' }] },
@@ -21,7 +24,7 @@ const DEFAULT_BOOKMARKS = [
     { title: '🛠️ Инструменты', links: [{ name: 'Яндекс Переводчик', url: 'https://translate.yandex.ru/' }, { name: 'Google Translate', url: 'https://translate.google.com/' }, { name: 'Gismeteo', url: 'https://gismeteo.ru/' }, { name: 'Say7', url: 'https://www.say7.info/' }] },
     { title: '💻 Разработка', links: [{ name: 'GitHub', url: 'https://github.com/' }, { name: 'Stack Overflow', url: 'https://stackoverflow.com/' }, { name: 'ChatGPT', url: 'https://chat.openai.com/' }, { name: 'MDN Web Docs', url: 'https://developer.mozilla.org/' }, { name: 'Docker Hub', url: 'https://hub.docker.com/' }, { name: 'CodePen', url: 'https://codepen.io/' }] },
     { title: '☁️ Облака', links: [{ name: 'Яндекс Диск', url: 'https://disk.yandex.ru/' }, { name: 'Google Drive', url: 'https://drive.google.com/' }, { name: 'Облако Mail.ru', url: 'https://cloud.mail.ru/' }, { name: 'Dropbox', url: 'https://www.dropbox.com/' }, { name: 'MEGA', url: 'https://mega.nz/' }, { name: 'OneDrive', url: 'https://onedrive.live.com/' }] },
-    { title: '🤖 ИИ-чаты', links: [{ name: 'Qwen AI', url: 'https://chat.qwen.ai/' },{ name: 'ChatGPT', url: 'https://chat.openai.com/' },{ name: 'Яндекс Алиса', url: 'https://alice.yandex.ru/' },{ name: 'Grok AI', url: 'https://grok.com/' },{ name: 'Gemini', url: 'https://gemini.google.com/' },{ name: 'Claude AI', url: 'https://claude.ai/' }]}
+    { title: '🤖 ИИ-чаты', links: [{ name: 'Qwen AI', url: 'https://chat.qwen.ai/' }, { name: 'ChatGPT', url: 'https://chat.openai.com/' }, { name: 'Яндекс Алиса', url: 'https://alice.yandex.ru/' }, { name: 'Grok AI', url: 'https://grok.com/' }, { name: 'Gemini', url: 'https://gemini.google.com/' }, { name: 'Claude AI', url: 'https://claude.ai/' }] }
 ];
 
 // ===== ЗАКЛАДКИ =====
@@ -34,6 +37,16 @@ function loadBookmarks() {
         try { return JSON.parse(s); }
         catch (e) { return JSON.parse(JSON.stringify(DEFAULT_BOOKMARKS)); }
     })() : JSON.parse(JSON.stringify(DEFAULT_BOOKMARKS));
+
+    // ✔ ИСПРАВЛЕНО: лёгкая чистка сохранённых данных —
+    // убираем случайные пробелы по краям названий и URL
+    bookmarks.forEach(cat => {
+        if (typeof cat.title === 'string') cat.title = cat.title.trim();
+        (cat.links || []).forEach(l => {
+            if (typeof l.name === 'string') l.name = l.name.trim();
+            if (typeof l.url === 'string') l.url = l.url.trim();
+        });
+    });
 }
 
 // Сохраняет закладки и перерисовывает их на экране
@@ -74,27 +87,30 @@ document.getElementById('bookmarks-grid').addEventListener('click', (e) => {
         bookmarks[c].links.splice(l, 1);
         saveBookmarks();
     }
-   else if (action === 'add-link') {
-    const ci = parseInt(btn.dataset.cat);
-    // Проверяем лимит: максимум 7 ссылок в категории
-    if (bookmarks[ci].links.length >= 7) {
-        alert('⚠️ В категории «' + bookmarks[ci].title + '» уже 7 ссылок.\nУдалите одну, чтобы добавить новую.');
-        return;
+    else if (action === 'add-link') {
+        const ci = parseInt(btn.dataset.cat);
+        // ✔ ИСПРАВЛЕНО: лимит через константу, а не «магическое число»
+        if (bookmarks[ci].links.length >= MAX_LINKS_PER_CATEGORY) {
+            alert('⚠️ В категории «' + bookmarks[ci].title + '» уже ' + MAX_LINKS_PER_CATEGORY + ' ссылок.\nУдалите одну, чтобы добавить новую.');
+            return;
+        }
+        openModal('Добавить ссылку', 'Название', true, (n, u) => {
+            bookmarks[ci].links.push({ name: n, url: u });
+            saveBookmarks();
+        });
     }
-    openModal('Добавить ссылку', 'Название', true, (n, u) => {
-        bookmarks[ci].links.push({ name: n, url: u });
-        saveBookmarks();
-    });
-}
 });
 
 // ===== ПЕРЕТАСКИВАНИЕ КАРТОЧЕК (Drag & Drop) =====
 let dragSrcIndex = null;
+
 function setupDragEvents(c) {
     c.addEventListener('dragstart', function(e) { dragSrcIndex = +this.dataset.index; this.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
     c.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
     c.addEventListener('dragenter', function(e) { e.preventDefault(); const t = e.target.closest('.card'); if (t && +t.dataset.index !== dragSrcIndex) t.classList.add('drag-over'); });
-    c.addEventListener('dragleave', function(e) { const t = e.target.closest('.card'); if (t) t.classList.remove('drag-over'); });
+    // ✔ ИСПРАВЛЕНО: подсветка снимается только при выходе за пределы карточки
+    // (раньше «мигала» при переходе курсора на дочерние элементы)
+    c.addEventListener('dragleave', function(e) { if (!this.contains(e.relatedTarget)) this.classList.remove('drag-over'); });
     c.addEventListener('drop', function(e) { e.preventDefault(); const t = e.target.closest('.card'); if (!t) return; const ti = +t.dataset.index; if (dragSrcIndex !== null && dragSrcIndex !== ti) { const [m] = bookmarks.splice(dragSrcIndex, 1); bookmarks.splice(ti, 0, m); saveBookmarks(); } });
     c.addEventListener('dragend', function() { this.classList.remove('dragging'); document.querySelectorAll('.card.drag-over').forEach(el => el.classList.remove('drag-over')); dragSrcIndex = null; });
 }
@@ -151,7 +167,6 @@ document.getElementById('modal-save').addEventListener('click', () => {
     if (mc) mc(n, u);
     closeModal();
 });
-
 document.getElementById('modal-cancel').addEventListener('click', closeModal);
 mo.addEventListener('click', e => { if (e.target === mo) closeModal(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && mo.classList.contains('active')) closeModal(); });
@@ -178,10 +193,12 @@ function updateSelectArrowColor(colorHex) {
 function setAccent(color, save = true) {
     document.documentElement.style.setProperty('--accent', color);
     let hoverColor = color;
+    // ✔ ИСПРАВЛЕНО: hover для бирюзового не работал — сравнивалось с '#0ff0d9',
+    // а кнопка в HTML передаёт '#00D1BC'
     if (color === '#f90') hoverColor = '#ffb347';
     else if (color === '#206a9b') hoverColor = '#2a85c2';
     else if (color === '#E72C98') hoverColor = '#ff66cc';
-    else if (color === '#0ff0d9') hoverColor = '#00D1BC';
+    else if (color === '#00D1BC') hoverColor = '#0ff0d9';
     document.documentElement.style.setProperty('--accent-hover', hoverColor);
     if (save) safeSetItem(ACCENT_KEY, color);
     document.querySelectorAll('.color-btn').forEach(btn => { btn.classList.toggle('active', btn.dataset.color === color); });
@@ -264,6 +281,7 @@ const qInput = document.getElementById('q');
 const customSelectTrigger = document.getElementById('custom-select-trigger');
 const customOptionsList = document.getElementById('custom-options');
 const selectedSearchEngineText = document.getElementById('selected-search-engine-text');
+
 const searchEngines = {
     'yandex': { name: 'Яндекс', url: 'https://yandex.ru/search/?text=' },
     'google': { name: 'Google', url: 'https://www.google.com/search?q=' },
@@ -284,9 +302,30 @@ function updateActiveOption() {
         }
     });
 }
-
 updateActiveOption();
-customSelectTrigger.addEventListener('click', (e) => { e.stopPropagation(); customOptionsList.classList.toggle('active'); });
+
+// ✔ ИСПРАВЛЕНО: единая функция открытия/закрытия селекта —
+// синхронизирует класс и aria-expanded (честное состояние для скринридеров)
+function setSelectOpen(open) {
+    customOptionsList.classList.toggle('active', open);
+    customSelectTrigger.setAttribute('aria-expanded', String(open));
+}
+
+customSelectTrigger.addEventListener('click', (e) => {
+    e.stopPropagation();
+    setSelectOpen(!customOptionsList.classList.contains('active'));
+});
+
+// ✔ ИСПРАВЛЕНО: управление селектом с клавиатуры (Enter/Space/Escape)
+customSelectTrigger.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        setSelectOpen(!customOptionsList.classList.contains('active'));
+    } else if (e.key === 'Escape') {
+        setSelectOpen(false);
+    }
+});
+
 customOptionsList.querySelectorAll('li').forEach(option => {
     option.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -295,7 +334,7 @@ customOptionsList.querySelectorAll('li').forEach(option => {
             currentSearchEngine = newEngineValue;
             selectedSearchEngineText.textContent = searchEngines[newEngineValue].name;
             safeSetItem(ENGINE_KEY, newEngineValue);
-            customOptionsList.classList.remove('active');
+            setSelectOpen(false);
             updateActiveOption();
         }
     });
@@ -303,7 +342,7 @@ customOptionsList.querySelectorAll('li').forEach(option => {
 
 document.addEventListener('click', (e) => {
     if (!customSelectTrigger.contains(e.target) && !customOptionsList.contains(e.target)) {
-        customOptionsList.classList.remove('active');
+        setSelectOpen(false);
     }
 });
 

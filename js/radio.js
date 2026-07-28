@@ -1,16 +1,17 @@
 // ============================================================
-// ОНЛАЙН-РАДИО — аудиоплеер с 5 станциями
+// ОНЛАЙН-РАДИО — аудиоплеер с 7 станциями
 // ============================================================
-
 // Список радиостанций
+// ⚠️ Relax FM и Jazz FM — потоки http://. Локально (file://) работают,
+// но при размещении страницы по HTTPS браузер заблокирует их (mixed content).
 const RADIO_STATIONS = [
-    { name: 'Relax FM', url: 'http://23.105.238.4/gpm-relaxfm495.aacp' },
-    { name: 'Record Chill', url: 'https://radiorecord.hostingradio.ru/chil96.aacp' },
-    { name: 'Monte Carlo', url: 'https://montecarlo.hostingradio.ru/montecarlo128.mp3' },
-    { name: 'Jazz FM', url: 'http://nashe1.hostingradio.ru/jazz-128.mp3' },
-    { name: 'SomaFM Groove Salad', url: 'https://ice1.somafm.com/groovesalad-128-mp3' },
-    { name: 'SomaFM Drone Zone', url: 'https://ice1.somafm.com/dronezone-128-mp3' },
-    { name: 'SomaFM Secret Agent', url: 'https://ice1.somafm.com/secretagent-128-mp3' }
+  { name: 'Relax FM', url: 'http://23.105.238.4/gpm-relaxfm495.aacp' },
+  { name: 'Record Chill', url: 'https://radiorecord.hostingradio.ru/chil96.aacp' },
+  { name: 'Monte Carlo', url: 'https://montecarlo.hostingradio.ru/montecarlo128.mp3' },
+  { name: 'Jazz FM', url: 'http://nashe1.hostingradio.ru/jazz-128.mp3' },
+  { name: 'SomaFM Groove Salad', url: 'https://ice1.somafm.com/groovesalad-128-mp3' },
+  { name: 'SomaFM Drone Zone', url: 'https://ice1.somafm.com/dronezone-128-mp3' },
+  { name: 'SomaFM Secret Agent', url: 'https://ice1.somafm.com/secretagent-128-mp3' }
 ];
 let currentStation = 0, isPlaying = false, errorRetryTimer = null, consecutiveErrors = 0;
 
@@ -31,104 +32,106 @@ const PAUSE_PATH = 'M6 19h4V5H6v14zm8-14v14h4V5h-4z';
 
 // Загружает сохранённую станцию и громкость
 function loadRadioState() {
-    try {
-        const saved = JSON.parse(localStorage.getItem(RADIO_STORAGE_KEY));
-        if (saved) {
-            currentStation = Math.min(saved.station || 0, RADIO_STATIONS.length - 1);
-            volumeSlider.value = saved.volume ?? 50;
-            audioEl.volume = (saved.volume ?? 50) / 100;
-        }
-    } catch (e) {}
-    stationName.textContent = RADIO_STATIONS[currentStation].name;
+  try {
+    const saved = JSON.parse(localStorage.getItem(RADIO_STORAGE_KEY));
+    if (saved) {
+      currentStation = Math.min(saved.station || 0, RADIO_STATIONS.length - 1);
+      volumeSlider.value = saved.volume ?? 50;
+      audioEl.volume = (saved.volume ?? 50) / 100;
+    }
+  } catch (e) {}
+  stationName.textContent = RADIO_STATIONS[currentStation].name;
 }
 
 // Сохраняет состояние с задержкой (чтобы не писать в localStorage слишком часто)
 const debouncedSaveRadio = debounce(() => {
-    safeSetItem(RADIO_STORAGE_KEY, JSON.stringify({ station: currentStation, volume: parseInt(volumeSlider.value) }));
+  safeSetItem(RADIO_STORAGE_KEY, JSON.stringify({ station: currentStation, volume: parseInt(volumeSlider.value) }));
 }, 300);
-
 function saveRadioState() { debouncedSaveRadio(); }
 
 // Меняет иконку Play/Pause и анимацию эквалайзера
 function updatePlayButton() {
-    playIcon.innerHTML = `<path d="${isPlaying ? PAUSE_PATH : PLAY_PATH}"/>`;
-    playBtn.classList.toggle('playing', isPlaying);
-    equalizer.classList.toggle('active', isPlaying);
+  playIcon.innerHTML = `<path d="${isPlaying ? PAUSE_PATH : PLAY_PATH}"/>`;
+  playBtn.classList.toggle('playing', isPlaying);
+  equalizer.classList.toggle('active', isPlaying);
 }
 
 function showError(msg) {
-    errorEl.textContent = msg;
-    errorEl.style.display = 'block';
-    equalizer.classList.remove('active');
+  errorEl.textContent = msg;
+  errorEl.style.display = 'block';
+  equalizer.classList.remove('active');
 }
-
 function hideError() { errorEl.style.display = 'none'; errorEl.textContent = ''; }
 
 // Останавливает радио
 function stopRadio() {
-    clearTimeout(errorRetryTimer);
-    audioEl.pause();
-    audioEl.removeAttribute('src');
-    audioEl.load();
-    isPlaying = false;
-    updatePlayButton();
+  clearTimeout(errorRetryTimer);
+  audioEl.pause();
+  audioEl.removeAttribute('src');
+  audioEl.load();
+  isPlaying = false;
+  updatePlayButton();
 }
 
 // Запускает текущую станцию
 function playCurrentStation() {
-    clearTimeout(errorRetryTimer);
-    hideError();
-    stationName.textContent = RADIO_STATIONS[currentStation].name;
-    audioEl.src = RADIO_STATIONS[currentStation].url;
-    audioEl.load();
-    const playPromise = audioEl.play();
-    if (playPromise) {
-        equalizer.classList.add('active');
-        playPromise.then(() => {
-            isPlaying = true;
-            consecutiveErrors = 0;
-            updatePlayButton();
-        }).catch(err => {
-            if (err.name === 'NotAllowedError') {
-                equalizer.classList.remove('active');
-                isPlaying = false;
-                updatePlayButton();
-            } else {
-                handleStreamError();
-            }
-        });
-    }
-    saveRadioState();
+  clearTimeout(errorRetryTimer);
+  hideError();
+  stationName.textContent = RADIO_STATIONS[currentStation].name;
+  audioEl.src = RADIO_STATIONS[currentStation].url;
+  audioEl.load();
+  const playPromise = audioEl.play();
+  if (playPromise) {
+    equalizer.classList.add('active');
+    playPromise.then(() => {
+      isPlaying = true;
+      consecutiveErrors = 0;
+      updatePlayButton();
+    }).catch(err => {
+      if (err.name === 'NotAllowedError') {
+        equalizer.classList.remove('active');
+        isPlaying = false;
+        updatePlayButton();
+      } else if (err.name === 'AbortError') {
+        // play() прерван сменой src — это не ошибка потока
+      } else {
+        handleStreamError();
+      }
+    });
+  }
+  saveRadioState();
 }
 
 // Обработчик ошибок потока: переключает на следующую станцию
 function handleStreamError() {
-    consecutiveErrors++;
-    if (consecutiveErrors >= RADIO_STATIONS.length) {
-        showError('Все станции недоступны');
-        stopRadio();
-        return;
-    }
-    showError(`Ошибка потока. Переключение... (${consecutiveErrors}/${RADIO_STATIONS.length})`);
-    errorRetryTimer = setTimeout(() => {
-        currentStation = (currentStation + 1) % RADIO_STATIONS.length;
-        playCurrentStation();
-    }, 3000);
+  // Плеер без источника (ручная остановка) — не переключаем
+  if (!audioEl.getAttribute('src')) return;
+  consecutiveErrors++;
+  if (consecutiveErrors >= RADIO_STATIONS.length) {
+    showError('Все станции недоступны');
+    stopRadio();
+    return;
+  }
+  showError(`Ошибка потока. Переключение... (${consecutiveErrors}/${RADIO_STATIONS.length})`);
+  errorRetryTimer = setTimeout(() => {
+    currentStation = (currentStation + 1) % RADIO_STATIONS.length;
+    playCurrentStation();
+  }, 3000);
 }
 
 function togglePlay() {
-    if (isPlaying) stopRadio();
-    else { consecutiveErrors = 0; playCurrentStation(); }
+  if (isPlaying) stopRadio();
+  else { consecutiveErrors = 0; playCurrentStation(); }
 }
 
 function switchStation(delta) {
-    clearTimeout(errorRetryTimer);
-    consecutiveErrors = 0;
-    currentStation = ((currentStation + delta) % RADIO_STATIONS.length + RADIO_STATIONS.length) % RADIO_STATIONS.length;
-    stationName.textContent = RADIO_STATIONS[currentStation].name;
-    saveRadioState();
-    if (isPlaying) playCurrentStation();
-    else hideError();
+  clearTimeout(errorRetryTimer);
+  consecutiveErrors = 0;
+  currentStation = ((currentStation + delta) % RADIO_STATIONS.length + RADIO_STATIONS.length) % RADIO_STATIONS.length;
+  stationName.textContent = RADIO_STATIONS[currentStation].name;
+  saveRadioState();
+  if (isPlaying) playCurrentStation();
+  else hideError();
 }
 
 // Привязываем обработчики к кнопкам

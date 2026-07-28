@@ -42,11 +42,13 @@ function renderCalendar(date) {
 
 // Кнопки навигации: предыдущий/следующий месяц
 calPrevBtn.addEventListener('click', () => {
+    currentCalDate.setDate(1); // ✔ защита: 31-е число не переполнит короткий месяц
     currentCalDate.setMonth(currentCalDate.getMonth() - 1);
     renderCalendar(currentCalDate);
 });
 
 calNextBtn.addEventListener('click', () => {
+    currentCalDate.setDate(1);
     currentCalDate.setMonth(currentCalDate.getMonth() + 1);
     renderCalendar(currentCalDate);
 });
