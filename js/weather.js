@@ -7,8 +7,8 @@ const WEATHER_UPDATE_INTERVAL = 30 * 60 * 1000;
 
 // Список городов для часов (с часовыми поясами)
 const cities = [
-    { id: 'clock-arkh', zone: 'Europe/Moscow' },
     { id: 'clock-pattaya', zone: 'Asia/Bangkok' },
+    { id: 'clock-arkh', zone: 'Europe/Moscow' },
     { id: 'clock-nhatrang', zone: 'Asia/Ho_Chi_Minh' }
 ];
 
@@ -32,8 +32,8 @@ setInterval(updateClocks, 1000);
 // ===== ПОГОДА =====
 // Города с координатами для API погоды
 const wCities = [
-    { id: 'arkh', lat: 64.5401, lon: 40.5433 },
     { id: 'pattaya', lat: 12.9236, lon: 100.8825 },
+    { id: 'arkh', lat: 64.5401, lon: 40.5433 },
     { id: 'nhatrang', lat: 12.2388, lon: 109.1967 }
 ];
 
