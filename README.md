@@ -21,7 +21,7 @@
 
 ## ✨ О проекте
 
-Локальная стартовая страница на **чистом HTML, CSS и JavaScript** — без фреймворков и сборок. Единственная внешняя библиотека — крошечный [SortableJS](https://sortablejs.github.io/Sortable/) для перетаскивания. Открой `index.html` или зайди на [rakursup.github.io](https://rakursup.github.io/).
+Локальная стартовая страница на **чистом HTML, CSS и JavaScript** — без фреймворков и сборок. Единственная внешняя библиотека — крошечный [SortableJS](https://sortablejs.github.io/Sortable/) для перетаскивания. Открой [Репозиторий](https://github.com/rakursup/rakursup.github.io) или зайди на страницу [rakursup.github.io](https://rakursup.github.io/).
 
 Все данные хранятся **только в твоём браузере** (localStorage) и никуда не отправляются.
 
