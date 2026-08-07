@@ -187,9 +187,6 @@
 ## 📁 Структура проекта
 
 ```text
-├── .github/
-│   └── workflows/
-│       └── static.yml    # деплой на GitHub Pages через Actions
 ├── index.html            # разметка страницы
 ├── style.css             # стили, темы, адаптив
 ├── favicon.svg           # иконка (фирменный градиент)
